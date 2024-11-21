@@ -1,0 +1,22 @@
+# docker-compose.yml
+version: '3.8'
+services:
+  geospatial-crew:
+    build: .
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ENV=production
+
+  monitoring:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-storage:/var/lib/grafana
+
+volumes:
+  grafana-storage:
+

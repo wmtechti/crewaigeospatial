@@ -1,0 +1,84 @@
+# Dockerfile
+FROM python:3.10-slim
+
+# Instala dependências do sistema
+RUN apt-get update && apt-get install -y \
+    gdal-bin \
+    libgdal-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Define diretório de trabalho
+WORKDIR /app
+
+# Copia arquivos de requisitos
+COPY requirements.txt .
+
+# Instala dependências Python
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copia código fonte
+COPY . .
+
+# Comando de entrada
+CMD ["python", "main.py"]
+
+# requirements.txt
+crewai==0.x.x
+geopandas==0.x.x
+scikit-learn==0.x.x
+xarray==0.x.x
+python-dotenv==0.x.x
+rasterio==0.x.x
+numpy==0.x.x
+
+# docker-compose.yml
+version: '3.8'
+services:
+  geospatial-crew:
+    build: .
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ENV=production
+
+  monitoring:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-storage:/var/lib/grafana
+
+volumes:
+  grafana-storage:
+
+# main.py (exemplo de execução)
+import os
+from dotenv import load_dotenv
+from geospatial_ml_crew import run_geospatial_ml_workflow
+import logging
+
+# Configuração de log
+logging.basicConfig(
+    filename='logs/geospatial_analysis.log',
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s: %(message)s'
+)
+
+def main():
+    try:
+        # Carrega variáveis de ambiente
+        load_dotenv()
+        
+        # Executa workflow
+        results = run_geospatial_ml_workflow()
+        
+        # Log de resultados
+        logging.info(f"Modelo treinado. Métricas: {results['metrics']}")
+        
+    except Exception as e:
+        logging.error(f"Erro na execução: {e}")
+
+if __name__ == "__main__":
+    main()
